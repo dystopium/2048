@@ -370,7 +370,7 @@ func consolidate(cur []int, padTo int) ([]int, int) {
 		panic("SHORT SLICE")
 	}
 
-	var new []int
+	new := make([]int, 0, padTo)
 	var score int
 
 	if len(cur) == 1 {
