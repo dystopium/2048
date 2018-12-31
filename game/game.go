@@ -15,6 +15,7 @@ type Game struct {
 	width  int
 	height int
 	rnd    *rand.Rand
+	score  int
 }
 
 func newRand() *rand.Rand {
@@ -42,6 +43,10 @@ func NewGame(width, height int) *Game {
 	g.placeNew()
 
 	return g
+}
+
+func (g *Game) Score() int {
+	return g.score
 }
 
 func (g *Game) getPos(row, col int) int {
@@ -76,13 +81,22 @@ func (g *Game) placeNew() {
 	}
 }
 
+// Direction is a strongly typed way to represent a move direction
 type Direction byte
 
 const (
-	DirInvalid Direction = iota
+	dirInvalid Direction = iota
+
+	// DirUp represents the up direction
 	DirUp
+
+	// DirDown represents the down direction
 	DirDown
+
+	// DirLeft represents the left direction
 	DirLeft
+
+	// DirRight represents the right direction
 	DirRight
 )
 
@@ -104,7 +118,8 @@ func (g *Game) Move(dir Direction) {
 				continue
 			}
 
-			new, _ := consolidate(cur, g.height)
+			new, score := consolidate(cur, g.height)
+			g.score += score
 
 			for row := 0; row < g.height; row++ {
 				g.setPos(row, col, new[row])
@@ -125,7 +140,8 @@ func (g *Game) Move(dir Direction) {
 				continue
 			}
 
-			new, _ := consolidate(cur, g.height)
+			new, score := consolidate(cur, g.height)
+			g.score += score
 
 			for row := 0; row < g.height; row++ {
 				g.setPos(row, col, new[g.height-1-row])
@@ -146,7 +162,8 @@ func (g *Game) Move(dir Direction) {
 				continue
 			}
 
-			new, _ := consolidate(cur, g.width)
+			new, score := consolidate(cur, g.width)
+			g.score += score
 
 			for col := 0; col < g.height; col++ {
 				g.setPos(row, col, new[col])
@@ -167,7 +184,8 @@ func (g *Game) Move(dir Direction) {
 				continue
 			}
 
-			new, _ := consolidate(cur, g.width)
+			new, score := consolidate(cur, g.width)
+			g.score += score
 
 			for col := 0; col < g.width; col++ {
 				g.setPos(row, col, new[g.width-1-col])

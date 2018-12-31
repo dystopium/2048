@@ -28,6 +28,7 @@ func main() {
 
 	for {
 		if print {
+			fmt.Printf("\nScore: %v\n\n", g.Score())
 			fmt.Println(g)
 		}
 		print = true
