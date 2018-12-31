@@ -14,10 +14,12 @@ func main() {
 	var playerType string
 	var width int
 	var height int
+	var limitPower uint
 
 	flag.StringVar(&playerType, "player", "console", "Player type. One of: console")
 	flag.IntVar(&width, "width", 4, "Width of the playing board.")
 	flag.IntVar(&height, "height", 4, "Height of the playing board.")
+	flag.UintVar(&limitPower, "lim", 11, "Power of 2 to set as the winning number. Default gives 2048.")
 	flag.Parse()
 
 	var player players.Player
@@ -34,7 +36,7 @@ func main() {
 	var numGames int
 
 	for g.State() != game.StateWon {
-		g = game.NewGame(width, height)
+		g = game.NewGame(width, height, limitPower)
 		player.Play(g)
 		//fmt.Println(g.State())
 

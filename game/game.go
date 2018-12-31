@@ -36,6 +36,7 @@ type Game struct {
 	board  [][]int
 	width  int
 	height int
+	limit  int
 	rnd    *rand.Rand
 	score  int
 	moves  int
@@ -50,7 +51,12 @@ func newRand() *rand.Rand {
 }
 
 // NewGame creates a new game board with two randomly placed tiles
-func NewGame(width, height int) *Game {
+// limitPower is the power of 2 required to win
+func NewGame(width, height int, limitPower uint) *Game {
+	if limitPower > 13 {
+		panic("Limit powers greater than 13 are not supported")
+	}
+
 	board := make([][]int, height)
 	for i := range board {
 		board[i] = make([]int, width)
@@ -60,6 +66,7 @@ func NewGame(width, height int) *Game {
 		board:  board,
 		width:  width,
 		height: height,
+		limit:  1 << limitPower,
 		rnd:    newRand(),
 		state:  StatePlaying,
 	}
@@ -269,17 +276,17 @@ func same(old, new [][]int) bool {
 }
 
 func (g *Game) setWonOrLost() {
-	if isWin(g.board) {
+	if isWin(g.board, g.limit) {
 		g.state = StateWon
 	} else if isLose(g.board) {
 		g.state = StateLost
 	}
 }
 
-func isWin(board [][]int) bool {
+func isWin(board [][]int, winValue int) bool {
 	for _, row := range board {
 		for _, val := range row {
-			if val == 2048 {
+			if val == winValue {
 				return true
 			}
 		}
