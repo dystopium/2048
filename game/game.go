@@ -216,7 +216,7 @@ func (g *Game) Move(dir Direction) {
 			new, score := consolidate(cur, g.width)
 			g.score += score
 
-			for col := 0; col < g.height; col++ {
+			for col := 0; col < g.width; col++ {
 				g.setPos(row, col, new[col])
 			}
 		}
