@@ -2,10 +2,12 @@ package main
 
 import (
 	"flag"
+	"fmt"
 
 	"github.com/dystopium/2048/game"
 	"github.com/dystopium/2048/players"
 	"github.com/dystopium/2048/players/console"
+	"github.com/dystopium/2048/players/random"
 )
 
 func main() {
@@ -23,9 +25,27 @@ func main() {
 	switch playerType {
 	case "console":
 		player = console.Player{}
+
+	case "random":
+		player = random.Player{}
 	}
 
-	g := game.NewGame(width, height)
+	g := &game.Game{}
+	var numGames int
 
-	player.Play(g)
+	for g.State() != game.StateWon {
+		g = game.NewGame(width, height)
+		player.Play(g)
+		//fmt.Println(g.State())
+
+		numGames++
+
+		if numGames%1000 == 0 {
+			fmt.Println(numGames)
+		}
+	}
+
+	fmt.Printf("\nWinning took %v games\n\n", numGames)
+	fmt.Printf("\nScore: %v\tMoves: %v\n\n", g.Score(), g.TotalMoves())
+	fmt.Println(g)
 }

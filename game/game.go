@@ -18,6 +18,19 @@ const (
 	StateLost
 )
 
+func (s State) String() string {
+	switch s {
+	case StatePlaying:
+		return "Playing"
+	case StateWon:
+		return "Won"
+	case StateLost:
+		return "Lost"
+	default:
+		return "?invalid state?"
+	}
+}
+
 // Game represents the game state
 type Game struct {
 	board  [][]int
