@@ -13,8 +13,14 @@ type State byte
 
 const (
 	stateInvalid State = iota
+
+	// StatePlaying indicates the game is ongoing
 	StatePlaying
+
+	// StateWon indicates the game is won
 	StateWon
+
+	// StateLost indicates the game is lost
 	StateLost
 )
 
@@ -37,6 +43,7 @@ type Game struct {
 	width  int
 	height int
 	limit  int
+	adds   int
 	rnd    *rand.Rand
 	score  int
 	moves  int
@@ -52,7 +59,7 @@ func newRand() *rand.Rand {
 
 // NewGame creates a new game board with two randomly placed tiles
 // limitPower is the power of 2 required to win
-func NewGame(width, height int, limitPower uint) *Game {
+func NewGame(width, height int, limitPower uint, adds int) *Game {
 	if limitPower > 13 {
 		panic("Limit powers greater than 13 are not supported")
 	}
@@ -67,12 +74,14 @@ func NewGame(width, height int, limitPower uint) *Game {
 		width:  width,
 		height: height,
 		limit:  1 << limitPower,
+		adds:   adds,
 		rnd:    newRand(),
 		state:  StatePlaying,
 	}
 
-	g.placeNew()
-	g.placeNew()
+	for i := 0; i < adds+1; i++ {
+		g.placeNew()
+	}
 
 	return g
 }
@@ -87,6 +96,7 @@ func (g *Game) Score() int {
 	return g.score
 }
 
+// State gets the current game.State of the game
 func (g *Game) State() State {
 	return g.state
 }
@@ -102,6 +112,10 @@ func (g *Game) setPos(row, col, newValue int) {
 // placeNew places a new random tile on the board
 // 90% chance for a 2, 10% chance for a 4
 func (g *Game) placeNew() {
+	if full(g.board) {
+		return
+	}
+
 	// first get the random value to place
 	newValue := 2
 
@@ -121,6 +135,18 @@ func (g *Game) placeNew() {
 			break
 		}
 	}
+}
+
+func full(board [][]int) bool {
+	for _, row := range board {
+		for _, val := range row {
+			if val == 0 {
+				return false
+			}
+		}
+	}
+
+	return true
 }
 
 // Direction is a strongly typed way to represent a move direction
@@ -259,7 +285,9 @@ func (g *Game) Move(dir Direction) {
 
 	// if old and new boards are the same, don't place new
 	if g.state == StatePlaying && !same(old, g.board) {
-		g.placeNew()
+		for i := 0; i < g.adds; i++ {
+			g.placeNew()
+		}
 	}
 }
 
