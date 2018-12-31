@@ -9,6 +9,15 @@ import (
 	"strings"
 )
 
+type State byte
+
+const (
+	stateInvalid State = iota
+	StatePlaying
+	StateWon
+	StateLost
+)
+
 // Game represents the game state
 type Game struct {
 	board  [][]int
@@ -16,6 +25,8 @@ type Game struct {
 	height int
 	rnd    *rand.Rand
 	score  int
+	moves  int
+	state  State
 }
 
 func newRand() *rand.Rand {
@@ -37,6 +48,7 @@ func NewGame(width, height int) *Game {
 		width:  width,
 		height: height,
 		rnd:    newRand(),
+		state:  StatePlaying,
 	}
 
 	g.placeNew()
@@ -45,8 +57,18 @@ func NewGame(width, height int) *Game {
 	return g
 }
 
+// TotalMoves reports the cumulative number of moves performed in the game
+func (g *Game) TotalMoves() int {
+	return g.moves
+}
+
+// Score reports the current game score
 func (g *Game) Score() int {
 	return g.score
+}
+
+func (g *Game) State() State {
+	return g.state
 }
 
 func (g *Game) getPos(row, col int) int {
@@ -103,6 +125,22 @@ const (
 // Move makes a move in the direction specified
 // Moves tiles, combines ones that can be combined, and adds a new random tile
 func (g *Game) Move(dir Direction) {
+	// sneaky sneaky
+	if g.state != StatePlaying {
+		return
+	}
+
+	old := make([][]int, g.height)
+	for i := range old {
+		old[i] = make([]int, g.width)
+	}
+
+	for row := 0; row < g.height; row++ {
+		for col := 0; col < g.width; col++ {
+			old[row][col] = g.board[row][col]
+		}
+	}
+
 	switch dir {
 	case DirUp:
 		for col := 0; col < g.width; col++ {
@@ -193,7 +231,88 @@ func (g *Game) Move(dir Direction) {
 		}
 	}
 
-	g.placeNew()
+	if !same(old, g.board) {
+		g.moves++
+	}
+
+	g.setWonOrLost()
+
+	// if old and new boards are the same, don't place new
+	if g.state == StatePlaying && !same(old, g.board) {
+		g.placeNew()
+	}
+}
+
+func same(old, new [][]int) bool {
+	for row := 0; row < len(old); row++ {
+		for col := 0; col < len(old[0]); col++ {
+			if old[row][col] != new[row][col] {
+				return false
+			}
+		}
+	}
+
+	return true
+}
+
+func (g *Game) setWonOrLost() {
+	if isWin(g.board) {
+		g.state = StateWon
+	} else if isLose(g.board) {
+		g.state = StateLost
+	}
+}
+
+func isWin(board [][]int) bool {
+	for _, row := range board {
+		for _, val := range row {
+			if val == 2048 {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+func isLose(board [][]int) bool {
+	height := len(board)
+	width := len(board[0])
+
+	for row := 0; row < height; row++ {
+		for col := 0; col < width; col++ {
+			// blank space means there's still a move
+			if board[row][col] == 0 {
+				return false
+			}
+
+			// up
+			if row > 1 &&
+				board[row][col] == board[row-1][col] {
+				return false
+			}
+
+			// down
+			if row < height-1 &&
+				board[row][col] == board[row+1][col] {
+				return false
+			}
+
+			// left
+			if col > 1 &&
+				board[row][col] == board[row][col-1] {
+				return false
+			}
+
+			// right
+			if col < width-1 &&
+				board[row][col] == board[row][col+1] {
+				return false
+			}
+		}
+	}
+
+	return true
 }
 
 // Consolidates pairs of numbers and returns a new, padded slice and the added score

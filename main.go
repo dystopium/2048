@@ -28,10 +28,14 @@ func main() {
 
 	for {
 		if print {
-			fmt.Printf("\nScore: %v\n\n", g.Score())
+			fmt.Printf("\nScore: %v\tMoves: %v\n\n", g.Score(), g.TotalMoves())
 			fmt.Println(g)
 		}
 		print = true
+
+		if g.State() != game.StatePlaying {
+			break
+		}
 
 		cmd, _, err := input.ReadRune()
 		if err != nil {
@@ -62,5 +66,13 @@ func main() {
 		case '\n':
 			print = false
 		}
+	}
+
+	switch g.State() {
+	case game.StateLost:
+		fmt.Println("YOU LOST")
+
+	case game.StateWon:
+		fmt.Println("YOU WON")
 	}
 }
