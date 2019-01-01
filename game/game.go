@@ -41,15 +41,19 @@ func (s State) String() string {
 
 // Game represents the game state
 type Game struct {
-	board  [][]uint64
-	width  uint64
-	height uint64
-	limit  uint64
-	adds   uint64
-	rnd    *rand.Rand
-	score  uint64
-	moves  uint64
-	state  State
+	// The board hold the *exponent* of the value, not the value itself.
+	// 2 is represented as 1, 4 as 2, etc.
+	// This allows much higher target values, up to 2^(2^64)
+	board      [][]uint64
+	width      uint64
+	height     uint64
+	limit      uint64
+	adds       uint64
+	rnd        *rand.Rand
+	printWidth int
+	score      uint64
+	moves      uint64
+	state      State
 }
 
 func newRand() *rand.Rand {
@@ -62,23 +66,23 @@ func newRand() *rand.Rand {
 // NewGame creates a new game board with two randomly placed tiles
 // limitPower is the power of 2 required to win
 func NewGame(width, height, limitPower, adds uint64) *Game {
-	if limitPower > 13 {
-		panic("Limit powers greater than 13 are not supported")
-	}
 
 	board := make([][]uint64, height)
 	for i := range board {
 		board[i] = make([]uint64, width)
 	}
 
+	longest := fmt.Sprintf("%v", 1<<limitPower)
+
 	g := &Game{
-		board:  board,
-		width:  width,
-		height: height,
-		limit:  1 << limitPower,
-		adds:   adds,
-		rnd:    newRand(),
-		state:  StatePlaying,
+		board:      board,
+		width:      width,
+		height:     height,
+		limit:      limitPower,
+		adds:       adds,
+		rnd:        newRand(),
+		printWidth: len(longest),
+		state:      StatePlaying,
 	}
 
 	for i := uint64(0); i < adds+1; i++ {
@@ -391,8 +395,10 @@ func consolidate(cur []uint64, padTo uint64) ([]uint64, uint64) {
 				new = append(new, cur[i])
 
 			} else {
-				new = append(new, cur[i]*2)
-				score += cur[i] * 2
+				new = append(new, cur[i]+1)
+
+				score += uint64(1) << (cur[i] + 1)
+
 				i++
 			}
 
@@ -408,13 +414,18 @@ func consolidate(cur []uint64, padTo uint64) ([]uint64, uint64) {
 }
 
 func (g *Game) String() string {
+	doubleLine := strings.Repeat("═", g.printWidth)
+	singleLine := strings.Repeat("─", g.printWidth)
+	blankString := strings.Repeat(" ", g.printWidth)
+	widthString := fmt.Sprintf("%%%vd", g.printWidth)
+
 	bdr := &strings.Builder{}
 
 	// Write the top border row
 	bdr.WriteRune('╔')
 
 	for i := uint64(0); i < g.width; i++ {
-		bdr.WriteString("════")
+		bdr.WriteString(doubleLine)
 
 		if i < g.width-1 {
 			bdr.WriteRune('╤')
@@ -431,9 +442,9 @@ func (g *Game) String() string {
 
 		for cidx, col := range row {
 			if col > 0 {
-				bdr.WriteString(fmt.Sprintf("%4d", col))
+				bdr.WriteString(fmt.Sprintf(widthString, 1<<col))
 			} else {
-				bdr.WriteString("    ")
+				bdr.WriteString(blankString)
 			}
 
 			if uint64(cidx) < g.width-1 {
@@ -450,7 +461,7 @@ func (g *Game) String() string {
 			bdr.WriteRune('╟')
 
 			for i := uint64(0); i < g.width; i++ {
-				bdr.WriteString("────")
+				bdr.WriteString(singleLine)
 
 				if i < g.width-1 {
 					bdr.WriteRune('┼')
@@ -463,7 +474,7 @@ func (g *Game) String() string {
 			bdr.WriteRune('╚')
 
 			for i := uint64(0); i < g.width; i++ {
-				bdr.WriteString("════")
+				bdr.WriteString(doubleLine)
 
 				if i < g.width-1 {
 					bdr.WriteRune('╧')
