@@ -65,7 +65,7 @@ func main() {
 
 		if numGames%1000 == 0 {
 			elapsed := time.Since(start)
-			fmt.Printf("Played %v games in %v\n", numGames, elapsed)
+			fmt.Printf("Played %v games in %v with an average %v moves to failure\n", numGames, elapsed, numMoves/numGames)
 		}
 	}
 
