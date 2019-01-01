@@ -6,7 +6,13 @@ import (
 	"os"
 
 	"github.com/dystopium/2048/game"
+	"github.com/dystopium/2048/players"
 )
+
+// NewConst returns a new constructor function for console players
+func NewConst() players.Const {
+	return func() players.Player { return &Player{} }
+}
 
 // Player is a human playing at a console window
 type Player struct{}

@@ -5,10 +5,12 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+	"math"
 	"math/rand"
 	"strings"
 )
 
+// State represents the current game state
 type State byte
 
 const (
@@ -39,14 +41,14 @@ func (s State) String() string {
 
 // Game represents the game state
 type Game struct {
-	board  [][]int
-	width  int
-	height int
-	limit  int
-	adds   int
+	board  [][]uint64
+	width  uint64
+	height uint64
+	limit  uint64
+	adds   uint64
 	rnd    *rand.Rand
-	score  int
-	moves  int
+	score  uint64
+	moves  uint64
 	state  State
 }
 
@@ -59,14 +61,14 @@ func newRand() *rand.Rand {
 
 // NewGame creates a new game board with two randomly placed tiles
 // limitPower is the power of 2 required to win
-func NewGame(width, height int, limitPower uint, adds int) *Game {
+func NewGame(width, height, limitPower, adds uint64) *Game {
 	if limitPower > 13 {
 		panic("Limit powers greater than 13 are not supported")
 	}
 
-	board := make([][]int, height)
+	board := make([][]uint64, height)
 	for i := range board {
-		board[i] = make([]int, width)
+		board[i] = make([]uint64, width)
 	}
 
 	g := &Game{
@@ -79,7 +81,7 @@ func NewGame(width, height int, limitPower uint, adds int) *Game {
 		state:  StatePlaying,
 	}
 
-	for i := 0; i < adds+1; i++ {
+	for i := uint64(0); i < adds+1; i++ {
 		g.placeNew()
 	}
 
@@ -87,12 +89,12 @@ func NewGame(width, height int, limitPower uint, adds int) *Game {
 }
 
 // TotalMoves reports the cumulative number of moves performed in the game
-func (g *Game) TotalMoves() int {
+func (g *Game) TotalMoves() uint64 {
 	return g.moves
 }
 
 // Score reports the current game score
-func (g *Game) Score() int {
+func (g *Game) Score() uint64 {
 	return g.score
 }
 
@@ -101,11 +103,11 @@ func (g *Game) State() State {
 	return g.state
 }
 
-func (g *Game) getPos(row, col int) int {
+func (g *Game) getPos(row, col uint64) uint64 {
 	return g.board[row][col]
 }
 
-func (g *Game) setPos(row, col, newValue int) {
+func (g *Game) setPos(row, col, newValue uint64) {
 	g.board[row][col] = newValue
 }
 
@@ -117,15 +119,16 @@ func (g *Game) placeNew() {
 	}
 
 	// first get the random value to place
-	newValue := 2
+	newValue := uint64(2)
 
 	if g.rnd.Float64() > 0.9 {
 		newValue = 4
 	}
 
 	for {
-		row := g.rnd.Intn(g.height)
-		col := g.rnd.Intn(g.width)
+		// These might overflow, but if it ever does the heat death of the universe will be a concern
+		row := uint64(g.rnd.Int63n(int64(g.height)))
+		col := uint64(g.rnd.Int63n(int64(g.width)))
 
 		// if the board gets full this might take a few tries
 		// if the board is large, this might take a LOT of tries and
@@ -137,7 +140,7 @@ func (g *Game) placeNew() {
 	}
 }
 
-func full(board [][]int) bool {
+func full(board [][]uint64) bool {
 	for _, row := range board {
 		for _, val := range row {
 			if val == 0 {
@@ -176,23 +179,23 @@ func (g *Game) Move(dir Direction) {
 		return
 	}
 
-	old := make([][]int, g.height)
+	old := make([][]uint64, g.height)
 	for i := range old {
-		old[i] = make([]int, g.width)
+		old[i] = make([]uint64, g.width)
 	}
 
-	for row := 0; row < g.height; row++ {
-		for col := 0; col < g.width; col++ {
+	for row := uint64(0); row < g.height; row++ {
+		for col := uint64(0); col < g.width; col++ {
 			old[row][col] = g.board[row][col]
 		}
 	}
 
 	switch dir {
 	case DirUp:
-		for col := 0; col < g.width; col++ {
-			var cur []int
+		for col := uint64(0); col < g.width; col++ {
+			var cur []uint64
 
-			for row := 0; row < g.height; row++ {
+			for row := uint64(0); row < g.height; row++ {
 				if g.getPos(row, col) != 0 {
 					cur = append(cur, g.getPos(row, col))
 				}
@@ -205,16 +208,16 @@ func (g *Game) Move(dir Direction) {
 			new, score := consolidate(cur, g.height)
 			g.score += score
 
-			for row := 0; row < g.height; row++ {
+			for row := uint64(0); row < g.height; row++ {
 				g.setPos(row, col, new[row])
 			}
 		}
 
 	case DirDown:
-		for col := 0; col < g.width; col++ {
-			var cur []int
+		for col := uint64(0); col < g.width; col++ {
+			var cur []uint64
 
-			for row := g.height - 1; row >= 0; row-- {
+			for row := g.height - 1; row < math.MaxUint64; row-- {
 				if g.getPos(row, col) != 0 {
 					cur = append(cur, g.getPos(row, col))
 				}
@@ -227,16 +230,16 @@ func (g *Game) Move(dir Direction) {
 			new, score := consolidate(cur, g.height)
 			g.score += score
 
-			for row := 0; row < g.height; row++ {
+			for row := uint64(0); row < g.height; row++ {
 				g.setPos(row, col, new[g.height-1-row])
 			}
 		}
 
 	case DirLeft:
-		for row := 0; row < g.height; row++ {
-			var cur []int
+		for row := uint64(0); row < g.height; row++ {
+			var cur []uint64
 
-			for col := 0; col < g.width; col++ {
+			for col := uint64(0); col < g.width; col++ {
 				if g.getPos(row, col) != 0 {
 					cur = append(cur, g.getPos(row, col))
 				}
@@ -249,16 +252,16 @@ func (g *Game) Move(dir Direction) {
 			new, score := consolidate(cur, g.width)
 			g.score += score
 
-			for col := 0; col < g.width; col++ {
+			for col := uint64(0); col < g.width; col++ {
 				g.setPos(row, col, new[col])
 			}
 		}
 
 	case DirRight:
-		for row := 0; row < g.height; row++ {
-			var cur []int
+		for row := uint64(0); row < g.height; row++ {
+			var cur []uint64
 
-			for col := g.width - 1; col >= 0; col-- {
+			for col := g.width - 1; col < math.MaxUint64; col-- {
 				if g.getPos(row, col) != 0 {
 					cur = append(cur, g.getPos(row, col))
 				}
@@ -271,7 +274,7 @@ func (g *Game) Move(dir Direction) {
 			new, score := consolidate(cur, g.width)
 			g.score += score
 
-			for col := 0; col < g.width; col++ {
+			for col := uint64(0); col < g.width; col++ {
 				g.setPos(row, col, new[g.width-1-col])
 			}
 		}
@@ -285,13 +288,13 @@ func (g *Game) Move(dir Direction) {
 
 	// if old and new boards are the same, don't place new
 	if g.state == StatePlaying && !same(old, g.board) {
-		for i := 0; i < g.adds; i++ {
+		for i := uint64(0); i < g.adds; i++ {
 			g.placeNew()
 		}
 	}
 }
 
-func same(old, new [][]int) bool {
+func same(old, new [][]uint64) bool {
 	for row := 0; row < len(old); row++ {
 		for col := 0; col < len(old[0]); col++ {
 			if old[row][col] != new[row][col] {
@@ -311,7 +314,7 @@ func (g *Game) setWonOrLost() {
 	}
 }
 
-func isWin(board [][]int, winValue int) bool {
+func isWin(board [][]uint64, winValue uint64) bool {
 	for _, row := range board {
 		for _, val := range row {
 			if val == winValue {
@@ -323,7 +326,7 @@ func isWin(board [][]int, winValue int) bool {
 	return false
 }
 
-func isLose(board [][]int) bool {
+func isLose(board [][]uint64) bool {
 	height := len(board)
 	width := len(board[0])
 
@@ -365,13 +368,13 @@ func isLose(board [][]int) bool {
 
 // Consolidates pairs of numbers and returns a new, padded slice and the added score
 // assumes the slice is more than 0 length
-func consolidate(cur []int, padTo int) ([]int, int) {
+func consolidate(cur []uint64, padTo uint64) ([]uint64, uint64) {
 	if len(cur) == 0 {
 		panic("SHORT SLICE")
 	}
 
-	new := make([]int, 0, padTo)
-	var score int
+	new := make([]uint64, 0, padTo)
+	var score uint64
 
 	if len(cur) == 1 {
 		new = cur
@@ -397,7 +400,7 @@ func consolidate(cur []int, padTo int) ([]int, int) {
 		}
 	}
 
-	for len(new) < padTo {
+	for uint64(len(new)) < padTo {
 		new = append(new, 0)
 	}
 
@@ -410,7 +413,7 @@ func (g *Game) String() string {
 	// Write the top border row
 	bdr.WriteRune('╔')
 
-	for i := 0; i < g.width; i++ {
+	for i := uint64(0); i < g.width; i++ {
 		bdr.WriteString("════")
 
 		if i < g.width-1 {
@@ -433,7 +436,7 @@ func (g *Game) String() string {
 				bdr.WriteString("    ")
 			}
 
-			if cidx < g.width-1 {
+			if uint64(cidx) < g.width-1 {
 				bdr.WriteRune('│')
 			} else {
 				bdr.WriteRune('║')
@@ -443,10 +446,10 @@ func (g *Game) String() string {
 		bdr.WriteRune('\n')
 
 		// Write out the next row, which might be a middle separator or the bottom row
-		if ridx < g.height-1 {
+		if uint64(ridx) < g.height-1 {
 			bdr.WriteRune('╟')
 
-			for i := 0; i < g.width; i++ {
+			for i := uint64(0); i < g.width; i++ {
 				bdr.WriteString("────")
 
 				if i < g.width-1 {
@@ -459,7 +462,7 @@ func (g *Game) String() string {
 		} else {
 			bdr.WriteRune('╚')
 
-			for i := 0; i < g.width; i++ {
+			for i := uint64(0); i < g.width; i++ {
 				bdr.WriteString("════")
 
 				if i < g.width-1 {

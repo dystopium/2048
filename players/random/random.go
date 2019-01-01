@@ -6,6 +6,7 @@ import (
 	"math/rand"
 
 	"github.com/dystopium/2048/game"
+	"github.com/dystopium/2048/players"
 )
 
 func newRand() *rand.Rand {
@@ -13,6 +14,11 @@ func newRand() *rand.Rand {
 	crand.Read(b)
 	seed := binary.LittleEndian.Uint64(b)
 	return rand.New(rand.NewSource(int64(seed)))
+}
+
+// NewConst returns a new constructor function for console players
+func NewConst() players.Const {
+	return func() players.Player { return &Player{} }
 }
 
 // Player is a human playing at a console window
