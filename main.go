@@ -43,14 +43,14 @@ func main() {
 		defer pprof.StopCPUProfile()
 	}
 
-	var pc players.Player
+	var p players.Player
 
 	switch playerType {
 	case "console":
-		pc = console.Play
+		p = console.Play
 
 	case "random":
-		pc = random.Play
+		p = random.Play
 	}
 
 	var runner runners.Runner
@@ -70,5 +70,5 @@ func main() {
 		return game.NewGame(width, height, limitPower, numAdds)
 	}
 
-	runner(gg, pc)
+	runner(gg, p)
 }
