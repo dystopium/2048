@@ -2,27 +2,31 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"os"
 	"runtime/pprof"
-	"time"
 
 	"github.com/dystopium/2048/game"
 	"github.com/dystopium/2048/players"
 	"github.com/dystopium/2048/players/console"
 	"github.com/dystopium/2048/players/random"
+	"github.com/dystopium/2048/runners"
+	"github.com/dystopium/2048/runners/parallel"
+	"github.com/dystopium/2048/runners/single"
+	"github.com/dystopium/2048/runners/untilwin"
 )
 
 func main() {
 	var cpuprofilename string
 	var playerType string
+	var runnerType string
 	var width uint64
 	var height uint64
 	var limitPower uint64
 	var numAdds uint64
 
 	flag.StringVar(&cpuprofilename, "cpuprofile", "", "File name for a CPU profile")
-	flag.StringVar(&playerType, "player", "console", "Player type. One of: console")
+	flag.StringVar(&playerType, "player", "console", "Player type. One of: console, random")
+	flag.StringVar(&runnerType, "runner", "untilwin", "Runner type. One of: single, untilwin, parallel")
 	flag.Uint64Var(&width, "width", 4, "Width of the playing board.")
 	flag.Uint64Var(&height, "height", 4, "Height of the playing board.")
 	flag.Uint64Var(&limitPower, "lim", 11, "Power of 2 to set as the winning number. Default gives 2048.")
@@ -49,27 +53,22 @@ func main() {
 		pc = random.NewConst()
 	}
 
-	g := &game.Game{}
-	var numGames uint64
-	var numMoves uint64
-	start := time.Now()
+	var runner runners.Runner
 
-	for g.State() != game.StateWon {
-		player := pc()
-		g = game.NewGame(width, height, limitPower, numAdds)
-		player.Play(g)
-		//fmt.Println(g.State())
+	switch runnerType {
+	case "single":
+		runner = single.Run
 
-		numGames++
-		numMoves += g.TotalMoves()
+	case "untilwin":
+		runner = untilwin.Run
 
-		if numGames%1000 == 0 {
-			elapsed := time.Since(start)
-			fmt.Printf("Played %v games in %v with an average %v moves to failure\n", numGames, elapsed, numMoves/numGames)
-		}
+	case "parallel":
+		runner = parallel.Run
 	}
 
-	fmt.Printf("\nWinning took %v games\n\n", numGames)
-	fmt.Printf("\nScore: %v\tMoves: %v\n\n", g.Score(), g.TotalMoves())
-	fmt.Println(g)
+	gg := func() *game.Game {
+		return game.NewGame(width, height, limitPower, numAdds)
+	}
+
+	runner(gg, pc)
 }
