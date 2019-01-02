@@ -11,7 +11,7 @@ import (
 )
 
 // Run plays the game until a game is won
-func Run(gg runners.GameGen, pc players.Const) {
+func Run(gg runners.GameGen, play players.Player) {
 
 	g := &game.Game{}
 	var numGames uint64
@@ -19,10 +19,8 @@ func Run(gg runners.GameGen, pc players.Const) {
 	start := time.Now()
 
 	for g.State() != game.StateWon {
-		player := pc()
 		g = gg()
-
-		player.Play(g)
+		play(g)
 
 		numGames++
 		numMoves += g.TotalMoves()

@@ -10,11 +10,9 @@ import (
 )
 
 // Run will run a single game until it wins or loses
-func Run(gg runners.GameGen, pc players.Const) {
-	player := pc()
+func Run(gg runners.GameGen, play players.Player) {
 	g := gg()
-
-	player.Play(g)
+	play(g)
 
 	switch g.State() {
 	case game.StateWon:
@@ -23,6 +21,7 @@ func Run(gg runners.GameGen, pc players.Const) {
 	case game.StateLost:
 		fmt.Println("\nYOU LOST!")
 	}
+
 	fmt.Printf("\nScore: %v\tMoves: %v\n\n", g.Score(), g.TotalMoves())
 	fmt.Println(g)
 }

@@ -13,7 +13,7 @@ import (
 )
 
 // Run runs games in as many cores as possible
-func Run(gg runners.GameGen, pc players.Const) {
+func Run(gg runners.GameGen, p players.Player) {
 
 	// times 2 for no good reason
 	numCores := runtime.NumCPU()
@@ -25,12 +25,10 @@ func Run(gg runners.GameGen, pc players.Const) {
 	for i := 0; i < numCores; i++ {
 		wg.Add(1)
 
-		go func(gg runners.GameGen, pc players.Const) {
+		go func(gg runners.GameGen, play players.Player) {
 			for {
-				player := pc()
 				g := gg()
-
-				player.Play(g)
+				play(g)
 
 				// either send the result
 				// or accept the signal to stop looping
@@ -43,7 +41,7 @@ func Run(gg runners.GameGen, pc players.Const) {
 					return
 				}
 			}
-		}(gg, pc)
+		}(gg, p)
 	}
 
 	g := &game.Game{}
