@@ -43,15 +43,4 @@ func Play(g *game.Game) {
 			g.Move(game.DirRight)
 		}
 	}
-
-	//fmt.Printf("\nScore: %v\tMoves: %v\n\n", g.Score(), g.TotalMoves())
-	//fmt.Println(g)
-
-	switch g.State() {
-	case game.StateLost:
-		//fmt.Println("LOST")
-
-	case game.StateWon:
-		//fmt.Println("WON")
-	}
 }
