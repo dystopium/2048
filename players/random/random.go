@@ -19,10 +19,17 @@ func newRand() *rand.Rand {
 func Play(g *game.Game) {
 	rnd := newRand()
 
-	//fmt.Println(g)
+	var currnd uint64
 
 	for g.State() == game.StatePlaying {
-		switch rnd.Intn(4) {
+		if currnd == 0 {
+			currnd = rnd.Uint64()
+		}
+
+		dir := currnd & 0x3
+		currnd >>= 2
+
+		switch dir {
 		case 0:
 			g.Move(game.DirUp)
 
