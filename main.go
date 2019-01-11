@@ -8,6 +8,7 @@ import (
 	"github.com/dystopium/2048/game"
 	"github.com/dystopium/2048/players"
 	"github.com/dystopium/2048/players/console"
+	"github.com/dystopium/2048/players/greedy"
 	"github.com/dystopium/2048/players/random"
 	"github.com/dystopium/2048/runners"
 	"github.com/dystopium/2048/runners/parallel"
@@ -25,7 +26,7 @@ func main() {
 	var numAdds uint64
 
 	flag.StringVar(&cpuprofilename, "cpuprofile", "", "File name for a CPU profile")
-	flag.StringVar(&playerType, "player", "console", "Player type. One of: console, random")
+	flag.StringVar(&playerType, "player", "console", "Player type. One of: console, random, greedy")
 	flag.StringVar(&runnerType, "runner", "untilwin", "Runner type. One of: single, untilwin, parallel")
 	flag.Uint64Var(&width, "width", 4, "Width of the playing board.")
 	flag.Uint64Var(&height, "height", 4, "Height of the playing board.")
@@ -51,6 +52,9 @@ func main() {
 
 	case "random":
 		p = random.Play
+
+	case "greedy":
+		p = greedy.Play
 	}
 
 	var runner runners.Runner

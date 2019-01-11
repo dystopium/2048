@@ -107,6 +107,19 @@ func (g *Game) State() State {
 	return g.state
 }
 
+// Board returns a copy of the current game board
+// Representation is a 2D array of the power of 2 in the square
+// Array is row major
+func (g *Game) Board() [][]uint64 {
+	ret := make([][]uint64, len(g.board))
+	for i, row := range g.board {
+		ret[i] = make([]uint64, len(row))
+		copy(ret[i], row)
+	}
+
+	return ret
+}
+
 func (g *Game) getPos(row, col uint64) uint64 {
 	return g.board[row][col]
 }
@@ -174,6 +187,21 @@ const (
 	// DirRight represents the right direction
 	DirRight
 )
+
+func (d Direction) String() string {
+	switch d {
+	case DirUp:
+		return "Up"
+	case DirDown:
+		return "Down"
+	case DirLeft:
+		return "Left"
+	case DirRight:
+		return "Right"
+	default:
+		return "?unknown direction?"
+	}
+}
 
 // Move makes a move in the direction specified
 // Moves tiles, combines ones that can be combined, and adds a new random tile
